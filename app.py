@@ -6,7 +6,7 @@ import json
 import os
 
 # TMDB API Key
-TMDB_API_KEY = "e238291df5c32e4560562b40024779fd"
+api_key = st.secrets["TMDB_API_KEY"]
 
 
 # Function to recommend movies based on similarity
