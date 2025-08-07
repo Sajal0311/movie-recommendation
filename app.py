@@ -8,41 +8,34 @@ import os
 # TMDB API Key
 api_key = st.secrets["TMDB_API_KEY"]
 
-
 # Function to recommend movies based on similarity
 def recommend(movie):
     movie_index = movies[movies["title"] == movie].index[0]
     distances = similarity[movie_index]
-    movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[
-        1:6
-    ]
+    movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
     recommended_movies = [movies.iloc[i[0]].title for i in movies_list]
     return recommended_movies
-
 
 # Load movie data and similarity matrix
 movies_dict = pickle.load(open("movies_dict.pkl", "rb"))
 movies = pd.DataFrame(movies_dict)
 similarity = pickle.load(open("similarity.pkl", "rb"))
 
-
 # Function to fetch movies from TMDB API
 def fetch_movies_from_tmdb(query):
     url = f"https://api.themoviedb.org/3/search/movie"
-    params = {"api_key": TMDB_API_KEY, "query": query}
+    params = {"api_key": api_key, "query": query}
     response = requests.get(url, params=params)
     if response.status_code == 200:
         return response.json().get("results", [])
     else:
         return []
 
-
 # Get TMDB poster URL
 def get_poster_url(poster_path):
     if poster_path:
         return f"https://image.tmdb.org/t/p/w500{poster_path}"
     return None
-
 
 # Chatbot function
 def chatbot_response(user_message):
@@ -68,7 +61,7 @@ def chatbot_response(user_message):
         # Discover movies based on genre or fetch popular movies
         url = "https://api.themoviedb.org/3/discover/movie"
         params = {
-            "api_key": TMDB_API_KEY,
+            "api_key": api_key,
             "language": "en-US",
             "sort_by": "popularity.desc",
         }
@@ -89,19 +82,13 @@ def chatbot_response(user_message):
             posters.append((title, release_date[:4], poster_url))
 
         if recommendations:
-            reply = "Here are some popular movies you might like:\n" + "\n".join(
-                recommendations
-            )
+            reply = "Here are some popular movies you might like:\n" + "\n".join(recommendations)
             return reply, posters
         else:
-            return (
-                "I couldn't find any movies matching your query. Please try again.",
-                [],
-            )
+            return ("I couldn't find any movies matching your query. Please try again.", [])
 
     except Exception as e:
         return f"Error: {e}", []
-
 
 # Save user credentials
 def save_user_credentials(username, password):
@@ -116,7 +103,6 @@ def save_user_credentials(username, password):
         with open("users.json", "w") as f:
             json.dump(existing_data, f)
 
-
 # Authenticate user
 def authenticate_user(username, password):
     if os.path.exists("users.json"):
@@ -126,7 +112,6 @@ def authenticate_user(username, password):
             if user.get("username") == username and user.get("password") == password:
                 return True
     return False
-
 
 # Login/Register Page
 def login_page():
@@ -170,12 +155,8 @@ def login_page():
 
     with tab2:
         new_username = st.text_input("Choose a Username", key="register_username")
-        new_password = st.text_input(
-            "Choose a Password", type="password", key="register_password"
-        )
-        confirm_password = st.text_input(
-            "Confirm Password", type="password", key="confirm_password"
-        )
+        new_password = st.text_input("Choose a Password", type="password", key="register_password")
+        confirm_password = st.text_input("Confirm Password", type="password", key="confirm_password")
 
         if st.button("Register"):
             if new_password != confirm_password:
@@ -184,18 +165,14 @@ def login_page():
                 save_user_credentials(new_username, new_password)
                 st.success("Registration successful! Please log in.")
 
-
 # Main Recommender Page
 def recommender_page():
     st.markdown(
         """
         <style>
-        /* Background color for the entire app */
         html, body, [data-testid="stAppViewContainer"] {
             background-color: rgba(25, 42, 86, 0.92);
         }
-
-        /* Customize buttons */
         .stButton>button {
             background-color: rgba(39, 174, 96, 0.92);
             color: white;
@@ -204,8 +181,6 @@ def recommender_page():
             font-size: 16px;
             border: none;
         }
-
-        /* Customize input boxes */
         .stTextInput>div>div>input {
             border: 2px solid ;
             background-color: rgba(40, 116, 166, 0.92);
@@ -213,20 +188,15 @@ def recommender_page():
             border-radius: 5px;
             font-size: 14px;
         }
-
-        /* Customize selectbox */
         [data-baseweb="select"] {
             background-color: rgba(9, 237, 255, 0.92);
             border: 2px solid;
             border-radius: 5px;
         }
-
-        /* Sidebar customization */
         [data-testid="stSidebar"] {
             background-color: rgba(33, 47, 90, 0.92);
             padding: 10px;
         }
-
         </style>
         """,
         unsafe_allow_html=True,
@@ -250,9 +220,7 @@ def recommender_page():
 
             with cols[idx]:
                 if poster_url:
-                    st.image(
-                        poster_url, caption=movie, use_container_width=True
-                    )  # Updated parameter
+                    st.image(poster_url, caption=movie, use_container_width=True)
                 else:
                     st.write(movie)
 
@@ -262,14 +230,7 @@ def recommender_page():
         st.session_state.username = None
 
     # Chatbot Toggle
-    if st.button(
-        (
-            "Open Chatbot"
-            if not st.session_state.get("show_chatbot", False)
-            else "Close Chatbot"
-        ),
-        key="chatbot_toggle",
-    ):
+    if st.button(("Open Chatbot" if not st.session_state.get("show_chatbot", False) else "Close Chatbot"), key="chatbot_toggle"):
         st.session_state.show_chatbot = not st.session_state.show_chatbot
 
     # Chatbot Area
@@ -279,28 +240,19 @@ def recommender_page():
         if st.button("Send", key="chatbot_send"):
             if user_input:
                 response, posters = chatbot_response(user_input)
-
-                # Only display response if no movies were found
                 if not posters:
                     st.write(response)
                 else:
                     st.write("Here are some movies you might like:")
-
-                # Display posters if available
                 if posters:
                     num_posters = len(posters)
                     cols = st.columns(num_posters)
                     for idx, (title, year, poster_url) in enumerate(posters):
                         with cols[idx]:
                             if poster_url:
-                                st.image(
-                                    poster_url,
-                                    caption=f"{title} ({year})",
-                                    use_container_width=True,
-                                )
+                                st.image(poster_url, caption=f"{title} ({year})", use_container_width=True)
                             else:
                                 st.write(f"{title} ({year})")
-
 
 # Render appropriate page
 if "authenticated" not in st.session_state:
